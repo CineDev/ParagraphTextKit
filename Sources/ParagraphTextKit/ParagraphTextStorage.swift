@@ -111,6 +111,10 @@ open class ParagraphTextStorage: NSTextStorage {
 	// MARK: - Paragraph Management
 
 	private func fixParagraphRanges() {
+		// empty indexes before editing means that there was no editing happened;
+		// it indicates that text storage is just updating text attributes, not changing the characters
+		guard !indexesBeforeEditing.isEmpty else { return }
+		
 		let paragraphsBefore = indexesBeforeEditing.map{ paragraphRanges[$0] }
 		let paragraphsAfter = substringParagraphRanges(from: editedRange)
 		
