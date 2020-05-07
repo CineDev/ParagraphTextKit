@@ -115,20 +115,19 @@ open class ParagraphTextStorage: NSTextStorage {
 		let paragraphsAfter = substringParagraphRanges(from: editedRange)
 		
 		let difference = paragraphsAfter.difference(from: paragraphsBefore)
-		let changes = ParagraphChange.from(difference: difference,
-										   initialOffset: indexesBeforeEditing.first!,
-										   textStorage: self)
+		let changes = ParagraphRangeChange.from(difference: difference,
+												initialOffset: indexesBeforeEditing.first!)
 		var lastEditedIndex = 0
 		for change in changes {
 			switch change {
 			case .removedParagraph(index: let index):
 				paragraphRanges.remove(at: index)
 				lastEditedIndex = index - 1
-			case .insertedParagraph(index: let index, descriptor: let descriptor):
-				paragraphRanges.insert(descriptor.storageRange, at: index)
+			case .insertedParagraph(index: let index, range: let range):
+				paragraphRanges.insert(range, at: index)
 				lastEditedIndex = index
-			case .editedParagraph(index: let index, descriptor: let descriptor):
-				paragraphRanges[index] = descriptor.storageRange
+			case .editedParagraph(index: let index, range: let range):
+				paragraphRanges[index] = range
 				lastEditedIndex = index
 			}
 		}
@@ -143,7 +142,10 @@ open class ParagraphTextStorage: NSTextStorage {
 		}
 		
 		// notify the delegate of changes being made
-		paragraphDelegate?.textStorage(self, didChangeParagraphs: changes)
+		if let existingDelegate = paragraphDelegate {
+			let descriptedChanges = ParagraphChange.from(rangeChanges: changes, textStorage: self)
+			existingDelegate.textStorage(self, didChangeParagraphs: descriptedChanges)
+		}
 		indexesBeforeEditing.removeAll()
 	}
 	
