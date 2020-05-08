@@ -14,13 +14,11 @@ As a result, you now get an opportunity to track changes paragraph-by-paragraph 
 ## Usage:
 Basic code to make it work:
 
-
 	// setup the system
 	let textStorage = ParagraphTextStorage()
 	let layoutManager = NSLayoutManager()
 	textStorage.addLayoutManager(layoutManager)
 
-	
 If you need to sync your model with ParagraphTextStorage content, set the paragraphDelegate to adopt the ParagraphTextStorageDelegate protocol. It's just one method:
 	
 	func textStorage(_ textStorage: ParagraphTextStorage, didChangeParagraphs changes: [ParagraphTextStorage.ParagraphChange]) {
