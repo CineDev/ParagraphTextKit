@@ -21,7 +21,7 @@ Basic code to make it work:
 	textStorage.addLayoutManager(layoutManager)
 
 	
-If you need to sync your model with ParagraphTextStorage content, just set the paragraphDelegate to adopt the ParagraphTextStorageDelegate protocol. It's just one method:
+If you need to sync your model with ParagraphTextStorage content, set the paragraphDelegate to adopt the ParagraphTextStorageDelegate protocol. It's just one method:
 	
 	func textStorage(_ textStorage: ParagraphTextStorage, didChangeParagraphs changes: [ParagraphTextStorage.ParagraphChange]) {
 		for change in changes {
