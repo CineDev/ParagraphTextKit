@@ -11,6 +11,7 @@ import Cocoa
 #elseif os(iOS)
 import UIKit
 #endif
+import Combine
 
 //	ModernTextStorage is a subclass of NSTextStorage class.
 //	It works with whole text paragraphs and notifies its
@@ -37,28 +38,11 @@ open class ParagraphTextStorage: NSTextStorage {
 	/// Helper array to store paragraph data before editing to compare with actual changes after they've being made
 	private var indexesBeforeEditing = [Int]()
 
-	
-	// MARK: - Initialization
-	
-	override public init() {
-		super.init()
-		startObserver()
-	}
-	
-	required public init?(coder aDecoder: NSCoder) {
-		super.init(coder: aDecoder)
-		startObserver()
-	}
-	
-	#if os(macOS)
-	required public init?(pasteboardPropertyList propertyList: Any, ofType type: NSPasteboard.PasteboardType) {
-		super.init(pasteboardPropertyList: propertyList, ofType: type)
-		startObserver()
-	}
-	#endif
+	/// Subscriber to the NSTextStorage.willProcessEditingNotification
+	private var processingSubscriber: AnyCancellable?
 	
 	deinit {
-		NotificationCenter.default.removeObserver(self)
+		processingSubscriber?.cancel()
 	}
 	
 	/// Method is crusial for correct calculations of paragraph ranges.
@@ -69,18 +53,15 @@ open class ParagraphTextStorage: NSTextStorage {
 	///
 	/// The NSTextStorage.willProcessEditingNotification notification ensures that we call fixParagraphRanges method at the right time,
 	/// when all the private APIs have done their job.
-	private func startObserver() {
-		NotificationCenter.default.addObserver(self,
-											   selector: #selector(textStorageWillProcessChanges(_:)),
-											   name: NSTextStorage.willProcessEditingNotification,
-											   object: nil)
+	private func startProcessingSubscriber() {
+		processingSubscriber = NotificationCenter.default.publisher(for: NSTextStorage.willProcessEditingNotification)
+			.compactMap{ $0.object as? ParagraphTextStorage }
+			.sink { sender in
+				if sender == self {
+					self.fixParagraphRanges()
+				}
+		}
 	}
-	
-	@objc private func textStorageWillProcessChanges(_ sender: Notification) {
-		guard sender.object as? ParagraphTextStorage == self else { return }
-		fixParagraphRanges()
-	}
-
 	
 	
 	// MARK: - NSTextStorage Primitive Methods
@@ -90,6 +71,10 @@ open class ParagraphTextStorage: NSTextStorage {
 	}
 	
 	open override func replaceCharacters(in range: NSRange, with str: String) {
+		if processingSubscriber == nil {
+			startProcessingSubscriber()
+		}
+		
 		let delta = str.length - range.length
 		
 		indexesBeforeEditing = paragraphIndexes(in: range)
