@@ -22,12 +22,7 @@ class Delegate: ParagraphTextStorageDelegate {
 			case .removedParagraph(index: let index):
 				paragraphs.remove(at: index)
 				
-				
 			case .editedParagraph(index: let index, descriptor: let paragraphDescriptor):
-				guard !paragraphs.isEmpty else {
-					paragraphs.append(paragraphDescriptor.text)
-					continue
-				}
 				paragraphs[index] = paragraphDescriptor.text
 			}
 		}
