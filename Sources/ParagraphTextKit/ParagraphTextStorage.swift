@@ -33,7 +33,14 @@ open class ParagraphTextStorage: NSTextStorage {
 	public fileprivate(set) var paragraphRanges = [NSRange(location: 0, length: 0)]
 
 	/// Delegate watches for any edits in the storage paragraphs
-	public weak var paragraphDelegate: ParagraphTextStorageDelegate?
+	public weak var paragraphDelegate: ParagraphTextStorageDelegate? {
+		didSet {
+			// make sure that the delegate becomes in sync with paragraphs, when initialized
+			if self.length == 0 {
+				paragraphDelegate?.textStorage(self, didChangeParagraphs: [ParagraphChange.insertedParagraph(index: 0, descriptor: paragraphDescriptor(atParagraphIndex: 0))])
+			}
+		}
+	}
 	
 	/// Helper array to store paragraph data before editing to compare with actual changes after they've being made
 	private var indexesBeforeEditing = [Int]()
