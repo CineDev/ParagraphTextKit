@@ -32,10 +32,6 @@ If you need to sync your model with ParagraphTextStorage content, set the paragr
 				yourModel.remove(at: index)
 		
 			case .editedParagraph(index: let index, descriptor: let paragraphDescriptor):
-				guard !yourModel.isEmpty else {
-					yourModel.append(paragraphDescriptor.text)
-					continue
-				}
 				yourModel[index] = paragraphDescriptor.text
 			}
 		}
