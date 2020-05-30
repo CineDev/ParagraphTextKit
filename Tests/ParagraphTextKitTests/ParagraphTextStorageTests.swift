@@ -86,7 +86,21 @@ final class ParagraphTextStorageTests: XCTestCase {
 					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
 		
 		#if !os(macOS)
+		textStorage.beginEditing()
+		textStorage.setAttributes([.foregroundColor: UIColor.textColor], range: secondRange)
+		textStorage.endEditing()
+
+		XCTAssertTrue(delegate.attributes[0].isEmpty &&
+					  delegate.attributes[1][.foregroundColor] as? UIColor == UIColor.textColor,
+					  "ParagraphTextStorage delegate attributes should match the ParagraphTextStorage")
 		
+		XCTAssertTrue(textStorage.paragraphRanges[0] == firstRange &&
+					  textStorage.paragraphRanges[1] == secondRange,
+					  "ParagraphTextStorage paragraph ranges should be correct")
+		
+		XCTAssertEqual(textStorage.paragraphRanges, delegate.ranges,
+					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
+
 		#else
 		textStorage.beginEditing()
 		textStorage.setAttributes([.foregroundColor: NSColor.textColor], range: secondRange)
