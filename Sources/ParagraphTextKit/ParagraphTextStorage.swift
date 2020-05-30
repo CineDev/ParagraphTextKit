@@ -105,7 +105,23 @@ open class ParagraphTextStorage: NSTextStorage {
 	private func fixParagraphRanges() {
 		// empty indexes before editing means that there was no editing happened;
 		// it indicates that text storage is just updating text attributes, not changing the characters
-		guard !indexesBeforeEditing.isEmpty else { return }
+		guard !indexesBeforeEditing.isEmpty else {
+			
+			// check if there was attribute changing in progress
+			if editedMask.contains(.editedAttributes), let existingDelegate = paragraphDelegate  {
+				var changes = [ParagraphChange]()
+				
+				// and if true, tell the delegate that some paragraphs were changed
+				substringParagraphRanges(from: editedRange).forEach { paragraphRange in
+					let idx = paragraphIndex(at: paragraphRange.location)
+					let descriptor = paragraphDescriptor(atParagraphIndex: idx)
+					changes.append(.editedParagraph(index: idx, descriptor: descriptor))
+				}
+				
+				existingDelegate.textStorage(self, didChangeParagraphs: changes)
+			}
+			return
+		}
 		
 		let paragraphsBefore = indexesBeforeEditing.map{ paragraphRanges[$0] }
 		let paragraphsAfter = substringParagraphRanges(from: editedRange)

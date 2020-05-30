@@ -3,6 +3,8 @@ import XCTest
 
 class Delegate: ParagraphTextStorageDelegate {
 	var paragraphs: [String] = []
+	var attributes: [[NSAttributedString.Key: Any]] = []
+	
 	var ranges: [NSRange] {
 		var location = 0
 		
@@ -18,14 +20,24 @@ class Delegate: ParagraphTextStorageDelegate {
 			switch change {
 			case .insertedParagraph(index: let index, descriptor: let paragraphDescriptor):
 				paragraphs.insert(paragraphDescriptor.text, at: index)
+				attributes.insert(attributes(from: paragraphDescriptor), at: index)
 				
 			case .removedParagraph(index: let index):
 				paragraphs.remove(at: index)
+				attributes.remove(at: index)
 				
 			case .editedParagraph(index: let index, descriptor: let paragraphDescriptor):
 				paragraphs[index] = paragraphDescriptor.text
+				attributes[index] = attributes(from: paragraphDescriptor)
 			}
 		}
+	}
+	
+	func attributes(from paragraphDescriptor: ParagraphTextStorage.ParagraphDescriptor) -> [NSAttributedString.Key: Any] {
+		if !paragraphDescriptor.text.isEmpty {
+			return paragraphDescriptor.attributedString.attributes(at: 0, effectiveRange: nil)
+		}
+		return [:]
 	}
 }
 
@@ -50,6 +62,50 @@ final class ParagraphTextStorageTests: XCTestCase {
 					  "ParagraphTextStorage should have one paragraph descriptor at init")
 	}
 	
+	
+	// MARK: - Attribute Changing Tests
+	
+	func testParagraphTextStorage_ChangeAttributes() {
+		let string = "First paragraph\nSecond paragraph"
+		
+		textStorage.beginEditing()
+		textStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: string)
+		textStorage.endEditing()
+
+		XCTAssertTrue(textStorage.paragraphRanges.count == 2,
+					  "ParagraphTextStorage should now have 2 paragraphs")
+		
+		let firstRange = NSRange(location: 0, length: string.paragraphs[0].length)
+		let secondRange = NSRange(location: NSMaxRange(firstRange), length: string.paragraphs[1].length)
+		
+		XCTAssertTrue(textStorage.paragraphRanges[0] == firstRange &&
+					  textStorage.paragraphRanges[1] == secondRange,
+					  "ParagraphTextStorage paragraph ranges should be correct")
+		
+		XCTAssertEqual(textStorage.paragraphRanges, delegate.ranges,
+					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
+		
+		#if !os(macOS)
+		
+		#else
+		textStorage.beginEditing()
+		textStorage.setAttributes([.foregroundColor: NSColor.textColor], range: secondRange)
+		textStorage.endEditing()
+
+		XCTAssertTrue(delegate.attributes[0].isEmpty &&
+					  delegate.attributes[1][.foregroundColor] as? NSColor == NSColor.textColor,
+					  "ParagraphTextStorage delegate attributes should match the ParagraphTextStorage")
+		
+		XCTAssertTrue(textStorage.paragraphRanges[0] == firstRange &&
+					  textStorage.paragraphRanges[1] == secondRange,
+					  "ParagraphTextStorage paragraph ranges should be correct")
+		
+		XCTAssertEqual(textStorage.paragraphRanges, delegate.ranges,
+					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
+
+		#endif
+	}
+
 	
 	// MARK: - Insertion Tests
 	
