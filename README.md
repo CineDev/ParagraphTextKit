@@ -9,7 +9,7 @@ As a result, you now get an opportunity to track changes paragraph-by-paragraph 
 ### Requirements
 
 - iOS 13.0+ / macOS 10.15+
-- Swift 5.0+
+- Swift 5.2+
 
 ## Usage:
 Basic code to make it work:
