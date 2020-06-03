@@ -123,6 +123,42 @@ final class ParagraphTextStorageTests: XCTestCase {
 	
 	// MARK: - Insertion Tests
 	
+	func testParagraphTextStorage_InsertNewLineInMiddleHeap() {
+		let string = "First paragraph\nSecond paragraph\nThirdParagraph\nFourthParagraph\nFifthParagraph"
+		let editString = "\n"
+		
+		textStorage.beginEditing()
+		textStorage.replaceCharacters(in: NSRange.zero, with: string)
+		textStorage.endEditing()
+
+		textStorage.beginEditing()
+		textStorage.replaceCharacters(in: NSRange(location: 33, length: 0), with: editString)
+		textStorage.endEditing()
+		
+		let endString = "First paragraph\nSecond paragraph\n\nThirdParagraph\nFourthParagraph\nFifthParagraph"
+		
+		XCTAssertTrue(textStorage.paragraphRanges.count == 6,
+					  "ParagraphTextStorage should now have 6 paragraphs")
+		
+		let firstRange = NSRange(location: 0, length: endString.paragraphs[0].length)
+		let secondRange = NSRange(location: NSMaxRange(firstRange), length: endString.paragraphs[1].length)
+		let thirdRange = NSRange(location: NSMaxRange(secondRange), length: endString.paragraphs[2].length)
+		let fourthRange = NSRange(location: NSMaxRange(thirdRange), length: endString.paragraphs[3].length)
+		let fifthRange = NSRange(location: NSMaxRange(fourthRange), length: endString.paragraphs[4].length)
+		let sixthRange = NSRange(location: NSMaxRange(fifthRange), length: endString.paragraphs[5].length)
+
+		XCTAssertTrue(textStorage.paragraphRanges[0] == firstRange &&
+			textStorage.paragraphRanges[1] == secondRange &&
+			textStorage.paragraphRanges[2] == thirdRange &&
+			textStorage.paragraphRanges[3] == fourthRange &&
+			textStorage.paragraphRanges[4] == fifthRange &&
+			textStorage.paragraphRanges[5] == sixthRange,
+					  "ParagraphTextStorage paragraph ranges should be correct")
+		
+		XCTAssertEqual(textStorage.paragraphRanges, delegate.ranges,
+					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
+	}
+
 	func testParagraphTextStorage_InsertFirstParagraphs() {
 		let string = "First paragraph\nSecond paragraph"
 		
@@ -1319,16 +1355,17 @@ final class ParagraphTextStorageTests: XCTestCase {
         ("test for initialization", testParagraphTextStorage_Initialization),
 		
 		// insertion tests
-		("test for insering following paragraphs", testParagraphTextStorage_InsertFirstParagraphs),
-		("test for insering an empty paragraph at the beginning", testParagraphTextStorage_InsertEmptyAtBeginning),
-		("test for insering an non-empty paragraph at the beginning", testParagraphTextStorage_InsertNonemptyAtBeginning),
-		("test for insering an empty paragraph in the middle", testParagraphTextStorage_InsertEmptyInMiddle),
-		("test for insering an non-empty paragraph in the middle", testParagraphTextStorage_InsertNonemptyInMiddle),
-		("test for insering an empty paragraph between two paragraphs", testParagraphTextStorage_InsertEmptyBetweenParagraphs),
-		("test for insering an non-empty paragraph between two paragraphs", testParagraphTextStorage_InsertNonemptyBetweenParagraphs),
-		("test for insering an empty paragraph between two other paragraphs", testParagraphTextStorage_InsertEmptyBetweenParagraphs2),
-		("test for insering an empty paragraph at the end", testParagraphTextStorage_InsertEmptyAtEnd),
-		("test for insering an non-empty paragraph at the end", testParagraphTextStorage_InsertNonemptyAtEnd),
+		("test for inserting a new line character into the middle of text heap", testParagraphTextStorage_InsertNewLineInMiddleHeap),
+		("test for inserting following paragraphs", testParagraphTextStorage_InsertFirstParagraphs),
+		("test for inserting an empty paragraph at the beginning", testParagraphTextStorage_InsertEmptyAtBeginning),
+		("test for inserting an non-empty paragraph at the beginning", testParagraphTextStorage_InsertNonemptyAtBeginning),
+		("test for inserting an empty paragraph in the middle", testParagraphTextStorage_InsertEmptyInMiddle),
+		("test for inserting an non-empty paragraph in the middle", testParagraphTextStorage_InsertNonemptyInMiddle),
+		("test for inserting an empty paragraph between two paragraphs", testParagraphTextStorage_InsertEmptyBetweenParagraphs),
+		("test for inserting an non-empty paragraph between two paragraphs", testParagraphTextStorage_InsertNonemptyBetweenParagraphs),
+		("test for inserting an empty paragraph between two other paragraphs", testParagraphTextStorage_InsertEmptyBetweenParagraphs2),
+		("test for inserting an empty paragraph at the end", testParagraphTextStorage_InsertEmptyAtEnd),
+		("test for inserting an non-empty paragraph at the end", testParagraphTextStorage_InsertNonemptyAtEnd),
 		
 		// editing tests
 		("test for editing the first paragraph when there's no other paragraphs", testParagraphTextStorage_EditFirstParagraph),
@@ -1354,10 +1391,10 @@ final class ParagraphTextStorageTests: XCTestCase {
 		("test for incrementally adding and editing paragraphs at the end and periodically insert a new paragraph in the middle", testParagraphTextStorage_IncrementallyAddAndEditParagraphAtEndAndPeriodicallyInsertNewParagraphInMiddle),
 		("test for incrementally adding and editing paragraphs at the end and then deleting some of them", testParagraphTextStorage_IncrementallyAddAndEditParagraphAtEndAndThenDeleteBunchOfThem),
 		("test for replacing all of the existing paragraphs with the two new paragraphs", testParagraphTextStorage_ReplaceAllParagraphsWithTwoNewParagraphs),
-		("test for insering an empty paragraph in the middle and then inserting another one", testParagraphTextStorage_InsertBlankParagraphInMiddleAndInsertAnotherOne),
+		("test for inserting an empty paragraph in the middle and then inserting another one", testParagraphTextStorage_InsertBlankParagraphInMiddleAndInsertAnotherOne),
 		("test for deleting a paragraph in the middle and editing the next one", testParagraphTextStorage_DeleteParagraphInMiddleAndEditingTheNextOne),
-		("test for insering an empty paragraph in the middle and edinging the following one", testParagraphTextStorage_InsertBetweenParagraphsBlankParagraphEditingTheNextOne),
-		("test for incrementally editing and insering paragraphs", testParagraphTextStorage_IncrementalEditingAndInsertingParagraph),
+		("test for inserting an empty paragraph in the middle and edinging the following one", testParagraphTextStorage_InsertBetweenParagraphsBlankParagraphEditingTheNextOne),
+		("test for incrementally editing and inserting paragraphs", testParagraphTextStorage_IncrementalEditingAndInsertingParagraph),
 		("test for incrementally editing paragraphs and make the first one empty", testParagraphTextStorage_IncrementalEditingAndMakeFirstParagraphEmpty),
 		("test for incrementally editing paragraphs and make the middle one empty", testParagraphTextStorage_IncrementalEditingAndMakeMiddleParagraphEmpty),
 		("test for incrementally editing paragraphs and make the last one empty", testParagraphTextStorage_IncrementalEditingAndMakeLastParagraphEmpty)
