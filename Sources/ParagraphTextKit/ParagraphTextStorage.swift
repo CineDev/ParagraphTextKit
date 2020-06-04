@@ -176,7 +176,7 @@ open class ParagraphTextStorage: NSTextStorage {
 		
 		// for inserted (not appended) paragraphs we need this hack
 		if paragraphs.count > 1 && range.max < length {
-			var nextLocation = range.max
+			var nextLocation = startingParagraphRange.max
 
 			for _ in 1 ..< paragraphs.count {
 				let paragraph = string.utfParagraphRange(at: nextLocation)
@@ -197,7 +197,7 @@ open class ParagraphTextStorage: NSTextStorage {
 		guard self.length > 0 else { return 0 }
 		guard location < self.length else { return paragraphRanges.count - 1 }
 
-		return 	paragraphRanges.firstIndex(where: { location >= $0.location && $0.max > location })!
+		return paragraphRanges.firstIndex(where: { $0.contains(location) })!
 	}
 	
 	
