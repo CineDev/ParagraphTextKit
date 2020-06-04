@@ -159,6 +159,47 @@ final class ParagraphTextStorageTests: XCTestCase {
 					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
 	}
 
+	func testParagraphTextStorage_InsertThreeNewLineInMiddleHeap() {
+		let string = "First paragraph\nSecond paragraph\nThirdParagraph\nFourthParagraph\nFifthParagraph"
+		let editString = "\n\n\n"
+		
+		textStorage.beginEditing()
+		textStorage.replaceCharacters(in: NSRange.zero, with: string)
+		textStorage.endEditing()
+
+		textStorage.beginEditing()
+		textStorage.replaceCharacters(in: NSRange(location: 33, length: 0), with: editString)
+		textStorage.endEditing()
+		
+		let endString = "First paragraph\nSecond paragraph\n\n\n\nThirdParagraph\nFourthParagraph\nFifthParagraph"
+		
+		XCTAssertTrue(textStorage.paragraphRanges.count == 8,
+					  "ParagraphTextStorage should now have 8 paragraphs")
+		
+		let firstRange = NSRange(location: 0, length: endString.paragraphs[0].length)
+		let secondRange = NSRange(location: NSMaxRange(firstRange), length: endString.paragraphs[1].length)
+		let thirdRange = NSRange(location: NSMaxRange(secondRange), length: endString.paragraphs[2].length)
+		let fourthRange = NSRange(location: NSMaxRange(thirdRange), length: endString.paragraphs[3].length)
+		let fifthRange = NSRange(location: NSMaxRange(fourthRange), length: endString.paragraphs[4].length)
+		let sixthRange = NSRange(location: NSMaxRange(fifthRange), length: endString.paragraphs[5].length)
+		let seventhRange = NSRange(location: NSMaxRange(sixthRange), length: endString.paragraphs[6].length)
+		let eighthRange = NSRange(location: NSMaxRange(seventhRange), length: endString.paragraphs[7].length)
+
+		XCTAssertTrue(textStorage.paragraphRanges[0] == firstRange &&
+			textStorage.paragraphRanges[1] == secondRange &&
+			textStorage.paragraphRanges[2] == thirdRange &&
+			textStorage.paragraphRanges[3] == fourthRange &&
+			textStorage.paragraphRanges[4] == fifthRange &&
+			textStorage.paragraphRanges[5] == sixthRange &&
+			textStorage.paragraphRanges[6] == seventhRange &&
+			textStorage.paragraphRanges[7] == eighthRange,
+					  "ParagraphTextStorage paragraph ranges should be correct")
+		
+		XCTAssertEqual(textStorage.paragraphRanges, delegate.ranges,
+					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
+	}
+
+
 	func testParagraphTextStorage_InsertFirstParagraphs() {
 		let string = "First paragraph\nSecond paragraph"
 		
