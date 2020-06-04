@@ -9,10 +9,10 @@
 import Foundation
 
 internal extension ParagraphTextStorage {
-	/// Describes the changes been made to the text storage.
+	/// ParagraphRangeChange structure describes the changes been made to the text storage.
 	///
 	/// The difference from the ParagraphChange enum is that this operates with NSRanges only, not with
-	/// a substring from the text storage, which is a little more time consuming.
+	/// substrings from the text storage, which is a little more time consuming.
 	/// Therefore ParagraphRangeChange is using only for the internal calculations
 	enum ParagraphRangeChange {
 		case insertedParagraph(index: Int, range: NSRange)
