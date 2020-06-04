@@ -9,6 +9,11 @@
 import Foundation
 
 public extension ParagraphTextStorage {
+	/// ParagraphDescriptor structure describes a text paragraph.
+	///
+	/// The paragraph could be either a standalone instance, or might exist in some external NSTextStroage object or any of its subclasses.
+	///
+	/// Origin of the paragraph is errelevant, since ParagraphDescriptor structure has all the neccessary data to describe a paragraph.
 	struct ParagraphDescriptor: Equatable {
 		
 		/// Range of the paragraph descriptor in a text storage
