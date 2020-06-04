@@ -12,8 +12,9 @@ internal extension ParagraphTextStorage {
 	/// ParagraphRangeChange structure describes the changes been made to the text storage.
 	///
 	/// The difference from the ParagraphChange enum is that this operates with NSRanges only, not with
-	/// substrings from the text storage, which is a little more time consuming.
-	/// Therefore ParagraphRangeChange is using only for the internal calculations
+	/// substrings from the text storage, because it is slightly more time consuming operation.
+	///
+	/// Therefore ParagraphRangeChange structur is used only for the internal calculations
 	enum ParagraphRangeChange {
 		case insertedParagraph(index: Int, range: NSRange)
 		case removedParagraph(index: Int)
