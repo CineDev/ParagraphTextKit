@@ -67,7 +67,7 @@ public extension String {
 	
 	/// Raw length of the string; unicode characters counts as sum of its scalars
 	var length: Int {
-		(self as NSString).length
+		self.utf16.count
 	}
 	
 	func utfParagraphRange(at location: Int) -> NSRange {
