@@ -20,29 +20,44 @@ internal extension ParagraphTextStorage {
 		case removedParagraph(index: Int)
 		case editedParagraph(index: Int, range: NSRange)
 		
-		static func from(difference: CollectionDifference<NSRange>, initialOffset: Int) -> [Self] {
+		static func from(difference: CollectionDifference<NSRange>,
+						 baseOffset: Int, baseParagraphRange: NSRange,
+						 insertionLocation: Int) -> [Self] {
+			guard !difference.isEmpty else { return [] }
 			var changes = [Self]()
-			guard !difference.isEmpty else { return changes }
 			
 			// edited index will always be the first one, no matter if paragraphs was added or removes,
 			// because that's how Apple's TextKit works
 			var editedIndex: Int?
+			var lastIndexEdited: Bool = false
 			
 			// make sure that some paragraph was edited
 			if let insertion = difference.insertions.first {
 				
 				switch insertion {
-				case .insert(offset: let insertOffset, element: let range, associatedWith: _):
+				case .insert(offset: let insertOffset, element: let insertionRange, associatedWith: _):
 					guard let deletion = difference.removals.first else { break }
 					
 					switch deletion {
-					case .remove(offset: let removeOffset, element: _, associatedWith: _):
+					case .remove(offset: let removeOffset, element: let removedRange, associatedWith: _):
 						
-						// edited paragraph means that the removing and inserting changes are the same)
+						// edited paragraph means that the removing and inserting changes are the same
 						if insertOffset == removeOffset {
+							// but if the first change happens outside of the first paragraph range,
+							// then this is actually an exception from the rule that 'edited index will always be the first one'
+							// and in this case the LAST index should be notified as 'edited index'
+							if insertionLocation == baseParagraphRange.location && removedRange == baseParagraphRange && baseParagraphRange.max > 0 ||
+							insertionLocation == baseParagraphRange.max && removedRange == baseParagraphRange && baseParagraphRange.max > 0 {
+								if insertionRange.location == baseParagraphRange.location && difference.insertions.count > 1	||
+									removedRange.location == baseParagraphRange.location && difference.removals.count > 1	{
+									lastIndexEdited = true
+									break
+								}
+							}
+							
 							// edited paragraph is alway corresponds to inserted change
-							let paragraphIndex = insertOffset + initialOffset
-							changes.append(.editedParagraph(index: paragraphIndex, range: range))
+							let paragraphIndex = insertOffset + baseOffset
+							changes.append(.editedParagraph(index: paragraphIndex, range: insertionRange))
 							editedIndex = insertOffset
 						}
 					default:
@@ -55,14 +70,38 @@ internal extension ParagraphTextStorage {
 			
 			for change in difference {
 				switch change {
-				case .insert(offset: let offset, element: let range, associatedWith: _):
+				case .insert(offset: let offset, element: let insertionRange, associatedWith: _):
+					let paragraphIndex = offset + baseOffset
+
+					if lastIndexEdited && difference.insertions.last == change && difference.insertions.count > difference.removals.count ||
+						lastIndexEdited && difference.insertions.first == change && difference.removals.count > difference.insertions.count {
+						// append edited paragraph only if it has really changed
+						if insertionRange.length != baseParagraphRange.length && difference.insertions.count > difference.removals.count {
+							changes.append(.editedParagraph(index: paragraphIndex, range: insertionRange))
+						}
+						continue
+					}
+					
 					guard offset != editedIndex else { continue }
-					let paragraphIndex = offset + initialOffset
-					changes.append(.insertedParagraph(index: paragraphIndex, range: range))
+					changes.append(.insertedParagraph(index: paragraphIndex, range: insertionRange))
 					
 				case .remove(offset: let offset, element: _, associatedWith: _):
+					let paragraphIndex = offset + baseOffset
+
+					if lastIndexEdited && difference.removals.first == change && difference.insertions.count > difference.removals.count ||
+						lastIndexEdited && difference.removals.last == change && difference.removals.count > difference.insertions.count {
+						if difference.removals.count > difference.insertions.count,
+							let firstInsertion = difference.insertions.first, let lastTouched = difference.removals.last,
+							case CollectionDifference<NSRange>.Change.insert(offset: _, element: let range, associatedWith: _) = firstInsertion,
+							case CollectionDifference<NSRange>.Change.remove(offset: _, element: let touchedRange, associatedWith: _) = lastTouched {
+							if touchedRange.length != range.length {
+								changes.append(.editedParagraph(index: paragraphIndex, range: range))
+							}
+						}
+						continue
+					}
+
 					guard offset != editedIndex else { continue }
-					let paragraphIndex = offset + initialOffset
 					changes.append(.removedParagraph(index: paragraphIndex))
 				}
 			}

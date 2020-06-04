@@ -5,6 +5,12 @@ class Delegate: ParagraphTextStorageDelegate {
 	var paragraphs: [String] = []
 	var attributes: [[NSAttributedString.Key: Any]] = []
 	
+	var insertions = 0
+	var removals = 0
+	var editions = 0
+	
+	private var firstInit = true
+	
 	var ranges: [NSRange] {
 		var location = 0
 		
@@ -15,10 +21,20 @@ class Delegate: ParagraphTextStorageDelegate {
 		}
 	}
 	
+	func paragraphCount() -> Int {
+		paragraphs.count
+	}
+	
 	func textStorage(_ textStorage: ParagraphTextStorage, didChangeParagraphs changes: [ParagraphTextStorage.ParagraphChange]) {
 		for change in changes {
 			switch change {
 			case .insertedParagraph(index: let index, descriptor: let paragraphDescriptor):
+				if firstInit {
+					firstInit = false
+				} else {
+					insertions += 1
+				}
+				
 				paragraphs.insert(paragraphDescriptor.text, at: index)
 				attributes.insert(attributes(from: paragraphDescriptor), at: index)
 				
@@ -26,9 +42,13 @@ class Delegate: ParagraphTextStorageDelegate {
 				paragraphs.remove(at: index)
 				attributes.remove(at: index)
 				
+				removals += 1
+				
 			case .editedParagraph(index: let index, descriptor: let paragraphDescriptor):
 				paragraphs[index] = paragraphDescriptor.text
 				attributes[index] = attributes(from: paragraphDescriptor)
+				
+				editions += 1
 			}
 		}
 	}
@@ -67,10 +87,15 @@ final class ParagraphTextStorageTests: XCTestCase {
 	
 	func testParagraphTextStorage_ChangeAttributes() {
 		let string = "First paragraph\nSecond paragraph"
-		
+		XCTAssertTrue(delegate.insertions == 0 && delegate.editions == 0 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		textStorage.beginEditing()
 		textStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: string)
 		textStorage.endEditing()
+
+		XCTAssertTrue(delegate.insertions == 1 && delegate.editions == 1 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
 
 		XCTAssertTrue(textStorage.paragraphRanges.count == 2,
 					  "ParagraphTextStorage should now have 2 paragraphs")
@@ -90,6 +115,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.setAttributes([.foregroundColor: UIColor.textColor], range: secondRange)
 		textStorage.endEditing()
 
+		XCTAssertTrue(delegate.insertions == 1 && delegate.editions == 2 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		XCTAssertTrue(delegate.attributes[0].isEmpty &&
 					  delegate.attributes[1][.foregroundColor] as? UIColor == UIColor.textColor,
 					  "ParagraphTextStorage delegate attributes should match the ParagraphTextStorage")
@@ -105,6 +133,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.beginEditing()
 		textStorage.setAttributes([.foregroundColor: NSColor.textColor], range: secondRange)
 		textStorage.endEditing()
+
+		XCTAssertTrue(delegate.insertions == 1 && delegate.editions == 2 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
 
 		XCTAssertTrue(delegate.attributes[0].isEmpty &&
 					  delegate.attributes[1][.foregroundColor] as? NSColor == NSColor.textColor,
@@ -131,10 +162,16 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange.zero, with: string)
 		textStorage.endEditing()
 
+		XCTAssertTrue(delegate.insertions == 4 && delegate.editions == 1 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		textStorage.beginEditing()
 		textStorage.replaceCharacters(in: NSRange(location: 33, length: 0), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 5 && delegate.editions == 1 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraph\nSecond paragraph\n\nThirdParagraph\nFourthParagraph\nFifthParagraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 6,
@@ -171,6 +208,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 33, length: 0), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 7 && delegate.editions == 1 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraph\nSecond paragraph\n\n\n\nThirdParagraph\nFourthParagraph\nFifthParagraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 8,
@@ -207,6 +247,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: string)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 1 && delegate.editions == 1 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		XCTAssertTrue(textStorage.paragraphRanges.count == 2,
 					  "ParagraphTextStorage should now have 2 paragraphs")
 		
@@ -233,6 +276,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 1 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "\nFirst paragraph\nSecond paragraph\nThirdParagraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 4,
@@ -265,6 +311,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 2 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "\nadditionFirst paragraph\nSecond paragraph\nThirdParagraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 4,
@@ -297,6 +346,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 3, length: 5), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 2 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "Fir\nragraph\nSecond paragraph\nThirdParagraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 4,
@@ -329,6 +381,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 3, length: 5), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 2 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "Fir\nadditionragraph\nSecond paragraph\nThirdParagraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 4,
@@ -361,6 +416,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 16, length: 0), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 1 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraph\n\nSecond paragraph\nThirdParagraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 4,
@@ -392,6 +450,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.beginEditing()
 		textStorage.replaceCharacters(in: NSRange(location: 32, length: 0), with: editString)
 		textStorage.endEditing()
+
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 1 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
 
 		let endString = "First paragraph\nSecond paragraph\n\nThirdParagraph"
 
@@ -425,6 +486,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 16, length: 0), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 1 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraph\naddition\nSecond paragraph\nThirdParagraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 4,
@@ -456,6 +520,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.beginEditing()
 		textStorage.replaceCharacters(in: NSRange(location: string.length, length: 0), with: editString)
 		textStorage.endEditing()
+		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 2 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
 		
 		let endString = "First paragraph\nSecond paragraph\nThird\n"
 		
@@ -489,6 +556,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: string.length, length: 0), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 2 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraph\nSecond paragraph\nThird\naddition"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 4,
@@ -520,6 +590,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: string)
 		textStorage.endEditing()
 
+		XCTAssertTrue(delegate.insertions == 0 && delegate.editions == 1 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 1,
@@ -546,6 +619,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 2 && delegate.editions == 2 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "additionFirst paragraph\nSecond paragraph\nThirdParagraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 3,
@@ -576,6 +652,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 3, length: 5), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 1 && delegate.editions == 2 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "Firadditionragraph\nSecond paragraph"
 
 		XCTAssertTrue(textStorage.paragraphRanges.count == 2,
@@ -604,6 +683,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: string.length, length: 0), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 1 && delegate.editions == 2 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraph\nSecond paragraphaddition"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 2,
@@ -632,6 +714,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: string.length, length: 0), with: editString)
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 2 && delegate.editions == 2 && delegate.removals == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraph\nSecond paragraph\na"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 3,
@@ -664,6 +749,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 15, length: 5), with: "")
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 2 && delegate.removals == 1,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraphnd paragraph\nThird paragraph\nFourth paragraph"
 
 		XCTAssertTrue(textStorage.paragraphRanges.count == 3,
@@ -692,6 +780,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.beginEditing()
 		textStorage.replaceCharacters(in: NSRange(location: 32, length: 5), with: "")
 		textStorage.endEditing()
+
+		XCTAssertTrue(delegate.insertions == 2 && delegate.editions == 2 && delegate.removals == 1,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
 
 		let endString = "First paragraph\nSecond paragraphd paragraph"
 
@@ -730,6 +821,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: string.length - 1, length: 1), with: "")
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 2 && delegate.removals == 1,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraph\nSecond paragraph\nThird paragraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 3,
@@ -770,6 +864,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 0, length: string.paragraphs[0].length), with: "")
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 2 && delegate.editions == 1 && delegate.removals == 1,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "Second paragraph\nThird paragraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 2,
@@ -805,6 +902,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 16, length: string.paragraphs[1].length), with: "")
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 1 && delegate.removals == 1,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraph\nThird paragraph\nFourth paragraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 3,
@@ -834,6 +934,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 32, length: string.paragraphs[2].length + 1), with: "")
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 2 && delegate.editions == 2 && delegate.removals == 1,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraph\nSecond paragraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 2,
@@ -873,6 +976,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 0, length: string.paragraphs[0].length + 3), with: "")
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 3 && delegate.editions == 1 && delegate.removals == 1,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "ond💋 paragraph\nThird paragraph\nFourth paragraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 3,
@@ -913,6 +1019,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 0, length: 35 + 3), with: "")
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 2 && delegate.editions == 2 && delegate.removals == 2,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "rd paragraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 1,
@@ -938,6 +1047,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 0, length: 35 + 3), with: "new paragraph\n")
 		textStorage.endEditing()
 
+		XCTAssertTrue(delegate.insertions == 4 && delegate.editions == 2 && delegate.removals == 2,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "new paragraph\nrd paragraph\nFourth paragraph"
 
 		XCTAssertTrue(textStorage.paragraphRanges.count == 3,
@@ -953,6 +1065,7 @@ final class ParagraphTextStorageTests: XCTestCase {
 		let testSubstring2 = String(endString[Range(secondRange, in: endString)!])
 		let storageSubstring3 = textStorage.attributedSubstring(from: textStorage.paragraphRanges[2]).string
 		let testSubstring3 = String(endString[Range(thirdRange, in: endString)!])
+		
 		XCTAssertTrue( storageSubstring1 == testSubstring1 &&
 			storageSubstring2 == testSubstring2 &&
 			storageSubstring3 == testSubstring3,
@@ -978,6 +1091,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: 15, length: 18 + 3), with: "new paragraph\n")
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions == 4 && delegate.editions == 2 && delegate.removals == 2,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
 		let endString = "First paragraphnew paragraph\nhird paragraph\nFourth paragraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 3,

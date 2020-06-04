@@ -19,7 +19,12 @@ Basic code to make it work:
 	let layoutManager = NSLayoutManager()
 	textStorage.addLayoutManager(layoutManager)
 
-If you need to sync your model with ParagraphTextStorage content, set the paragraphDelegate to adopt the ParagraphTextStorageDelegate protocol. It's just one method:
+If you need to sync your model with ParagraphTextStorage content, set the paragraphDelegate to adopt the ParagraphTextStorageDelegate protocol.
+It's just two methods:
+	
+	func paragraphCount() {
+		yourModel.paragraphs.count
+	}
 	
 	func textStorage(_ textStorage: ParagraphTextStorage, didChangeParagraphs changes: [ParagraphTextStorage.ParagraphChange]) {
 		for change in changes {
@@ -41,6 +46,17 @@ Finally, set the paragraphDelegate property of the ParagraphTextStorage instance
 	textStorage.paragraphDelegate = yourDelegateObject
 
 That's all you need to implement to make things work.
+
+### Important changes in version 1.1:
+In version 1.0 paragraph diffs algorhythm was too basic.  It did the job but its flaw was its abstraction, since purpose of the algorhythm was not the accuracy of paragraph indexes in diff calculation but the compatibility with NSTextStorage ranges. It means that paragraph indexes during the storage mutation was calculated sacrificing the exact accuracy of paragraphs in which changes had been made.
+
+That was done because it was much easier to do, since NSTextStorage won't let you to delete first paragraph. In this case NSTextStorage will just set attributes of the first paragraph to attributes of the next one and delete that next paragraph. At least, it looks like that.
+
+But that logic leads to some confusing behaviour when you need to update your model with exact paragraph indexes and, for example, calculate the style for next paragraph.
+
+In version 1.1 that flaw is fixed. If you delete the first paragraph in the NSTextStorage object, your paragraphDelegate will be notified that the paragraph at index 0 was deleted. And even more! If no paragraphs were touched outside of deleting of inserting paragraph operation, your paragraphDelegate no longer gets notified of an edited paragraph (that was the case in version 1.0 as well).
+
+And even more good news: unit tests now track aforementioned integrity of operations.
 
 ## Installation:
 ### Swift Package Manager

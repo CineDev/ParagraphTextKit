@@ -10,5 +10,6 @@ import Foundation
 
 /// Protocol defines methods that are invoked if the storage has been edited
 public protocol ParagraphTextStorageDelegate: class {
+	func paragraphCount() -> Int
 	func textStorage(_ textStorage: ParagraphTextStorage, didChangeParagraphs changes: [ParagraphTextStorage.ParagraphChange])
 }

@@ -36,7 +36,7 @@ open class ParagraphTextStorage: NSTextStorage {
 	public weak var paragraphDelegate: ParagraphTextStorageDelegate? {
 		didSet {
 			// make sure that the delegate becomes in sync with paragraphs, when initialized
-			if self.length == 0 {
+			if self.length == 0 && paragraphDelegate?.paragraphCount() == 0 {
 				paragraphDelegate?.textStorage(self, didChangeParagraphs: [ParagraphChange.insertedParagraph(index: 0, descriptor: paragraphDescriptor(atParagraphIndex: 0))])
 			}
 		}
@@ -128,13 +128,15 @@ open class ParagraphTextStorage: NSTextStorage {
 		
 		let difference = paragraphsAfter.difference(from: paragraphsBefore)
 		let changes = ParagraphRangeChange.from(difference: difference,
-												initialOffset: indexesBeforeEditing.first!)
+												baseOffset: indexesBeforeEditing.first!,
+												baseParagraphRange: paragraphsBefore.first!,
+												insertionLocation: editedRange.location)
 		var lastEditedIndex = 0
 		for change in changes {
 			switch change {
 			case .removedParagraph(index: let index):
 				paragraphRanges.remove(at: index)
-				lastEditedIndex = index - 1
+				lastEditedIndex = lastEditedIndex == 0 ? 0 : index - 1
 			case .insertedParagraph(index: let index, range: let range):
 				paragraphRanges.insert(range, at: index)
 				lastEditedIndex = index
@@ -143,7 +145,8 @@ open class ParagraphTextStorage: NSTextStorage {
 				lastEditedIndex = index
 			}
 		}
-		
+		// ensure that first paragraph starts from 0 (in case if the first paragraph was deleted)
+		paragraphRanges[0].location = 0
 		var lastEditedParagraph = paragraphRanges[lastEditedIndex]
 		
 		// update location of paragraph ranges following the edited ones
