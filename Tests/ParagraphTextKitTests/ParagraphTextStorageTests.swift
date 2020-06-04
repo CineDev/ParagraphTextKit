@@ -159,7 +159,7 @@ final class ParagraphTextStorageTests: XCTestCase {
 					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
 	}
 
-	func testParagraphTextStorage_InsertThreeNewLineInMiddleHeap() {
+	func testParagraphTextStorage_InsertThreeNewLinesInMiddleHeap() {
 		let string = "First paragraph\nSecond paragraph\nThirdParagraph\nFourthParagraph\nFifthParagraph"
 		let editString = "\n\n\n"
 		
@@ -1397,6 +1397,7 @@ final class ParagraphTextStorageTests: XCTestCase {
 		
 		// insertion tests
 		("test for inserting a new line character into the middle of text heap", testParagraphTextStorage_InsertNewLineInMiddleHeap),
+		("test for inserting three new line characters into the middle of text heap", testParagraphTextStorage_InsertThreeNewLinesInMiddleHeap),
 		("test for inserting following paragraphs", testParagraphTextStorage_InsertFirstParagraphs),
 		("test for inserting an empty paragraph at the beginning", testParagraphTextStorage_InsertEmptyAtBeginning),
 		("test for inserting an non-empty paragraph at the beginning", testParagraphTextStorage_InsertNonemptyAtBeginning),
