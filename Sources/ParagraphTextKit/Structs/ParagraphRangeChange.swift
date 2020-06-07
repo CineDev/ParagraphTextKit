@@ -46,8 +46,7 @@ internal extension ParagraphTextStorage {
 							// but if the first change happens outside of the first paragraph range,
 							// then this is actually an exception from the rule that 'edited index will always be the first one'
 							// and in this case the LAST index should be notified as 'edited index'
-							if insertionLocation == baseParagraphRange.location && removedRange == baseParagraphRange && baseParagraphRange.max > 0 ||
-							insertionLocation == baseParagraphRange.max && removedRange == baseParagraphRange && baseParagraphRange.max > 0 {
+							if insertionLocation == baseParagraphRange.location && removedRange == baseParagraphRange && baseParagraphRange.max > 0 {
 								if insertionRange.location == baseParagraphRange.location && difference.insertions.count > 1	||
 									removedRange.location == baseParagraphRange.location && difference.removals.count > 1	{
 									lastIndexEdited = true
