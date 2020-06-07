@@ -44,6 +44,13 @@ open class ParagraphTextStorage: NSTextStorage {
 	
 	/// Helper array to store paragraph data before editing to compare with actual changes after they've being made
 	private var indexesBeforeEditing = [Int]()
+	
+	/// Helper var indicating that after the editing the resulting range of the next paragraph will be equal to the first edited paragraph
+	/// and that might confuse the diff algorhythm.
+	///
+	/// Confusing results in the case when the diff algorhythm will not notify the delegate that the next paragraph was edited,
+	/// because the algorhythm will consider that if the range is the same, then there was no change at all
+	private var nextEditedParagraphWillHaveRangeEqualWithFirst = false
 
 	/// Subscriber to the NSTextStorage.willProcessEditingNotification
 	private var processingSubscriber: AnyCancellable?
@@ -86,6 +93,20 @@ open class ParagraphTextStorage: NSTextStorage {
 		
 		indexesBeforeEditing = paragraphIndexes(in: range)
 		
+		if indexesBeforeEditing.count > 1 && delta < 0 {
+			let firstRange = paragraphRanges[indexesBeforeEditing[0]]
+
+			if firstRange.location == range.location && range.max > firstRange.max {
+				let affectedRanges = indexesBeforeEditing.map{ paragraphRanges[$0] }
+				let checkRanges =  Array(affectedRanges.dropLast())
+				let sum = checkRanges.reduce(0, { $0 + $1.length })
+				
+				if affectedRanges.last!.length - abs(delta + sum) == firstRange.length {
+					nextEditedParagraphWillHaveRangeEqualWithFirst = true
+				}
+			}
+		}
+		
 		beginEditing()
 		storage.replaceCharacters(in: range, with: str)
 		edited(.editedCharacters, range: range, changeInLength: delta)
@@ -103,6 +124,11 @@ open class ParagraphTextStorage: NSTextStorage {
 	// MARK: - Paragraph Management
 
 	private func fixParagraphRanges() {
+		defer {
+			nextEditedParagraphWillHaveRangeEqualWithFirst = false
+			indexesBeforeEditing.removeAll()
+		}
+		
 		// empty indexes before editing means that there was no editing happened;
 		// it indicates that text storage is just updating text attributes, not changing the characters
 		guard !indexesBeforeEditing.isEmpty else {
@@ -127,10 +153,28 @@ open class ParagraphTextStorage: NSTextStorage {
 		let paragraphsAfter = substringParagraphRanges(from: editedRange)
 		
 		let difference = paragraphsAfter.difference(from: paragraphsBefore)
-		let changes = ParagraphRangeChange.from(difference: difference,
+		var changes = ParagraphRangeChange.from(difference: difference,
 												baseOffset: indexesBeforeEditing.first!,
 												baseParagraphRange: paragraphsBefore.first!,
 												insertionLocation: editedRange.location)
+		
+		var hasEditedChange = false
+		changes.forEach{ change in
+			if case ParagraphRangeChange.editedParagraph(index: _, range: _) = change { hasEditedChange = true }
+		}
+		
+		// if there's 'next edited paragraph has same range as the first one' situation ...
+		if nextEditedParagraphWillHaveRangeEqualWithFirst && !hasEditedChange {
+			// we need to decrement removed indexes ...
+			for (i, change) in changes.enumerated() {
+				if case ParagraphRangeChange.removedParagraph(index: let index) = change {
+					changes[i] = .removedParagraph(index: index - 1)
+				}
+			}
+			// and to add the 'editedParagraph' change, so the delegate will be notified of edited paragraph
+			changes.append(ParagraphRangeChange.editedParagraph(index: indexesBeforeEditing.first!, range: paragraphsAfter.first!))
+		}
+		
 		var lastEditedIndex = 0
 		for change in changes {
 			switch change {
@@ -161,7 +205,6 @@ open class ParagraphTextStorage: NSTextStorage {
 			let descriptedChanges = ParagraphChange.from(rangeChanges: changes, textStorage: self)
 			existingDelegate.textStorage(self, didChangeParagraphs: descriptedChanges)
 		}
-		indexesBeforeEditing.removeAll()
 	}
 	
 	
