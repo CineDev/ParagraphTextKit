@@ -136,7 +136,7 @@ open class ParagraphTextStorage: NSTextStorage {
 			switch change {
 			case .removedParagraph(index: let index):
 				paragraphRanges.remove(at: index)
-				lastEditedIndex = lastEditedIndex == 0 ? 0 : index - 1
+				lastEditedIndex = lastEditedIndex == 0 ? 0 : lastEditedIndex - 1
 			case .insertedParagraph(index: let index, range: let range):
 				paragraphRanges.insert(range, at: index)
 				lastEditedIndex = index
