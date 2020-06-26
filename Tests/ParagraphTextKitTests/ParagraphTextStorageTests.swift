@@ -1315,6 +1315,10 @@ final class ParagraphTextStorageTests: XCTestCase {
 		textStorage.replaceCharacters(in: NSRange(location: location, length: 3), with: "new paragraph\n")
 		textStorage.endEditing()
 		
+		XCTAssertTrue(delegate.insertions[0] == 1 && delegate.insertions[1] == 2 && delegate.insertions[2] == 3 && delegate.insertions[3] == 2)
+		XCTAssertTrue(delegate.editions[0] == 0 && delegate.editions[1] == 1)
+		XCTAssertTrue(delegate.removals[0] == 2)
+
 		let endString = "First paragraph\nSecond parag💋raphnew paragraph\nird paragraph\nFourth paragraph"
 		
 		XCTAssertTrue(textStorage.paragraphRanges.count == 4,
@@ -1723,9 +1727,9 @@ final class ParagraphTextStorageTests: XCTestCase {
 		// mixed operations tests
 		("test for deleting the paragraph at the beginning and editing the following one", testParagraphTextStorage_DeleteWholeParagraphAtBeginningAndEditNextOne),
 		("test for deleting the paragraph at the beginning, editing the following one (when the resulting ranges are equal",
-			testParagraphTextStorage_DeleteWholeParagraphAtBeginningAndEditNextOneWithSameFinalRanges)
+			testParagraphTextStorage_DeleteWholeParagraphAtBeginningAndEditNextOneWithSameFinalRanges),
 		("test for deleting the two paragraphs at the beginning, editing the following one (when the resulting ranges are equal",
-			testParagraphTextStorage_DeleteTwoParagraphAtBeginningAndEditNextOneWithSameFinalRanges)
+			testParagraphTextStorage_DeleteTwoParagraphAtBeginningAndEditNextOneWithSameFinalRanges),
 		("test for deleting the two paragraphs at the beginning, editing the following one", testParagraphTextStorage_DeleteWholeTwoParagraphsAtBeginningAndEditNextOne),
 		("test for deleting the two paragraphs at the beginning and editing the following paragraph and inserting a new one", testParagraphTextStorage_DeleteWholeTwoParagraphsAtBeginningEditingTheNextOneAndInsertNewParagraph),
 		("test for deleting two paragraphs in the middle, editing the following paragraph and inserting a new one", testParagraphTextStorage_DeleteTwoParagraphsInMiddleEditingTheNextOneAndInsertNewParagraph),
