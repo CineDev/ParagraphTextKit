@@ -17,8 +17,17 @@ Basic code to make it work:
 
 	// setup the system
 	let textStorage = ParagraphTextStorage()
+	textStorage.paragraphDelegate = self
+	
 	let layoutManager = NSLayoutManager()
 	textStorage.addLayoutManager(layoutManager)
+	
+	let textContainer = NSTextContainer(containerSize: .zero)
+	layoutManager.addTextContainer(textContainer)
+
+	let textView = NSTextView(frame: someFrame, textContainer: textContainer)
+	someScrollView.documentView = textView
+
 
 If you need to sync your model with ParagraphTextStorage content, set the paragraphDelegate to adopt the ParagraphTextStorageDelegate protocol.
 It's just two methods:
