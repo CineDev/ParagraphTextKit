@@ -48,9 +48,15 @@ open class ParagraphTextStorage: NSTextStorage {
 	/// Helper var indicating that after the editing the resulting range of the next paragraph will be equal to the first edited paragraph
 	/// and that might confuse the diff algorhythm.
 	///
-	/// Confusing results in the case when the diff algorhythm will not notify the delegate that the next paragraph was edited,
+	/// That confusing results in the case when the diff algorhythm will not notify the delegate that the next paragraph was edited,
 	/// because the algorhythm will consider that if the range is the same, then there was no change at all
 	private var nextEditedParagraphWillHaveRangeEqualWithFirst = false
+	
+	/// Helper var for the case when a user pastes some text and that text length is equal to the selected text within the text view.
+	///
+	/// It is important, because if the edit with the same length of the selected text , the diff algrothythm
+	/// won't recognize it as a change, since the result text storage will have the same paragraph lengths
+	private var editHasSameLength = false
 
 	/// Subscriber to the NSTextStorage.willProcessEditingNotification
 	private var processingSubscriber: AnyCancellable?
@@ -92,6 +98,12 @@ open class ParagraphTextStorage: NSTextStorage {
 		let delta = str.length - range.length
 		
 		indexesBeforeEditing = paragraphIndexes(in: range)
+		
+		if delta == 0 && str.length > 0 {
+			editHasSameLength = true
+		} else {
+			editHasSameLength = false
+		}
 		
 		if indexesBeforeEditing.count > 1 && delta < 0 {
 			let firstRange = paragraphRanges[indexesBeforeEditing[0]]
@@ -157,6 +169,22 @@ open class ParagraphTextStorage: NSTextStorage {
 												baseOffset: indexesBeforeEditing.first!,
 												baseParagraphRange: paragraphsBefore.first!,
 												insertionLocation: editedRange.location)
+		
+		// if delta of edits is zero (user could just paste the same-length text over the same-length selected text)
+		// make sure that the delegate will be notified of those changes, since the diff algorhythm won't recognize
+		// any changes in that case
+		guard changes.count != 0 && !editHasSameLength else {
+			indexesBeforeEditing.forEach{
+				changes.append(ParagraphRangeChange.editedParagraph(index: $0, range: paragraphRanges[$0]))
+			}
+			
+			if let existingDelegate = paragraphDelegate {
+				let descriptedChanges = ParagraphChange.from(rangeChanges: changes, textStorage: self)
+				existingDelegate.textStorage(self, didChangeParagraphs: descriptedChanges)
+			}
+			
+			return
+		}
 		
 		var hasEditedChange = false
 		changes.forEach{ change in
@@ -251,7 +279,10 @@ open class ParagraphTextStorage: NSTextStorage {
 		guard length > 0 else { return [0] }
 		
 		// get paragraphs from the range
-		let paragraphs = attributedSubstring(from: range).string.paragraphs
+		var paragraphs = attributedSubstring(from: range).string.paragraphs
+		if paragraphs.last?.isEmpty == true && editHasSameLength {
+			paragraphs = paragraphs.dropLast()
+		}
 
 		// get start/end indexes for substring the existing paragraphs array..
 		// .. it's better than iterating through all the paragraphs, especially if text is huge

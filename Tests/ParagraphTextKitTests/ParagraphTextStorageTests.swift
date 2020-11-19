@@ -716,6 +716,77 @@ final class ParagraphTextStorageTests: XCTestCase {
 					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
 	}
 	
+	func testParagraphTextStorage_EditParagraphWithSameLengthEdit() {
+		let string = "First paragraph\nSecond paragraph"
+		let editString = "additions"
+		
+		textStorage.beginEditing()
+		textStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: string)
+		textStorage.endEditing()
+		
+		textStorage.beginEditing()
+		textStorage.replaceCharacters(in: NSRange(location: 6, length: 9), with: editString)
+		textStorage.endEditing()
+		
+		XCTAssertTrue(delegate.insertions.count == 1 && delegate.editions.count == 2 && delegate.removals.count == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
+		XCTAssertTrue(delegate.insertions[0] == 1)
+		XCTAssertTrue(delegate.editions[0] == 0 && delegate.editions[1] == 0)
+
+		let endString = "First additions\nSecond paragraph"
+
+		XCTAssertTrue(textStorage.paragraphRanges.count == 2,
+					  "ParagraphTextStorage should now have 2 paragraphs")
+		
+		let firstRange = NSRange(location: 0, length: endString.paragraphs[0].length)
+		let secondRange = NSRange(location: NSMaxRange(firstRange), length: endString.paragraphs[1].length)
+		
+		XCTAssertTrue(textStorage.paragraphRanges[0] == firstRange &&
+			textStorage.paragraphRanges[1] == secondRange,
+					  "ParagraphTextStorage paragraph ranges should be correct")
+		
+		XCTAssertEqual(textStorage.paragraphRanges, delegate.ranges,
+					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
+	}
+	
+	func testParagraphTextStorage_EditMultipleParagraphWithSameLengthEdit() {
+		let string = "First paragraph\nSecond paragraph\nThird paragraph"
+		let editString = "First paragraph\nSecond paragraph\n"
+		
+		textStorage.beginEditing()
+		textStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: string)
+		textStorage.endEditing()
+		
+		textStorage.beginEditing()
+		textStorage.replaceCharacters(in: NSRange(location: 0, length: 33), with: editString)
+		textStorage.endEditing()
+		
+		XCTAssertTrue(delegate.insertions.count == 2 && delegate.editions.count == 4 && delegate.removals.count == 0,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
+		XCTAssertTrue(delegate.insertions[0] == 1 && delegate.insertions[1] == 2)
+		XCTAssertTrue(delegate.editions[0] == 0 && delegate.editions[1] == 0 && delegate.editions[2] == 1 && delegate.editions[3] == 2)
+
+		let endString = "First paragraph\nSecond paragraph\nThird paragraph"
+
+		XCTAssertTrue(textStorage.paragraphRanges.count == 3,
+					  "ParagraphTextStorage should now have 3 paragraphs")
+		
+		let firstRange = NSRange(location: 0, length: endString.paragraphs[0].length)
+		let secondRange = NSRange(location: NSMaxRange(firstRange), length: endString.paragraphs[1].length)
+		let thirdRange = NSRange(location: NSMaxRange(secondRange), length: endString.paragraphs[2].length)
+
+		XCTAssertTrue(textStorage.paragraphRanges[0] == firstRange &&
+						textStorage.paragraphRanges[1] == secondRange &&
+						textStorage.paragraphRanges[2] == thirdRange,
+					  "ParagraphTextStorage paragraph ranges should be correct")
+		
+		XCTAssertEqual(textStorage.paragraphRanges, delegate.ranges,
+					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
+	}
+
+	
 	func testParagraphTextStorage_EditParagraphAtEnd() {
 		let string = "First paragraph\nSecond paragraph"
 		let editString = "addition"
