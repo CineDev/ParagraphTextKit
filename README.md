@@ -22,7 +22,7 @@ Basic code to make it work:
 	let layoutManager = NSLayoutManager()
 	textStorage.addLayoutManager(layoutManager)
 	
-	let textContainer = NSTextContainer(containerSize: .zero)
+	let textContainer = NSTextContainer()
 	layoutManager.addTextContainer(textContainer)
 
 	let textView = NSTextView(frame: someFrame, textContainer: textContainer)
