@@ -32,8 +32,8 @@ Basic code to make it work:
 If you need to sync your model with ParagraphTextStorage content, set the paragraphDelegate to adopt the ParagraphTextStorageDelegate protocol.
 It's just two methods:
 	
-	func paragraphCount() {
-		yourModel.paragraphs.count
+	var presentedParagraphs: [AttributedRepresentable] {
+		yourModel.paragraphs
 	}
 	
 	func textStorage(_ textStorage: ParagraphTextStorage, didChangeParagraphs changes: [ParagraphTextStorage.ParagraphChange]) {
@@ -57,8 +57,17 @@ Finally, set the paragraphDelegate property of the ParagraphTextStorage instance
 
 That's all you need to implement to make things work.
 
+### Important changes in version 1.2:
+This version introduces the AttributedRepresentable protocol that defines the attributed string representation of any model. In our case we use this protocol to create even stronger syncronization between a delegate and ParagraphTextStorage.
+
+Updated delegate protocol with new requrements of the model which now should adopt AttributedRepresentable protocol allows ParagraphTextKit to load the initial state of your model into its underlying text storage property.
+
+In previous versions ParagraphTextKit was able to do its job only if your initial text model was empty. If you've already had some paragraphs in your model then you'd need to set ParagraphTextStorage content by yourself right after the initialization. Now ParagraphTextKit takes that onto itself completely.
+
+Note: the required #paragraphCount()# method is now replaced with the #presentedParagraphs# computed property.
+
 ### Important changes in version 1.1:
-In version 1.0 paragraph diffs algorhythm was too basic. It did the job but its flaw was its abstraction, since the purpose of the algorhythm was not the accuracy of paragraph indexes in diff calculation but the integrity of delegate notifications that end up equal with NSTextStorage edited ranges. It means that paragraph indexes during the storage mutation waere calculated with sacrification of the exact accuracy of paragraphs in which changes had been made, but the ending delegate notofications still guaranteed the sync with the NSTextStorage object.
+In version 1.0 paragraph diffs algorhythm was too basic. It did the job but its flaw was its abstraction, since the purpose of the algorhythm was not the accuracy of paragraph indexes in diff calculation but the integrity of delegate notifications that end up equal with NSTextStorage edited ranges. It means that paragraph indexes during the storage mutation waere calculated with sacrification of the exact accuracy of paragraph indexes in which changes had been made, but the ending delegate notofications still guaranteed the sync with the NSTextStorage object.
 
 But that logic leads to some confusing behaviour when you need to update your model with exact paragraph indexes and, for example, calculate the style for next paragraph.
 
