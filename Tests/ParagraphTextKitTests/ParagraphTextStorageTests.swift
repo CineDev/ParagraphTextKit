@@ -21,8 +21,8 @@ class Delegate: ParagraphTextStorageDelegate {
 		}
 	}
 	
-	var presentedParagraphs: [AttributedRepresentable] {
-		paragraphs
+	var presentedParagraphs: [NSAttributedString] {
+		paragraphs.map{ $0.attributedPresentation }
 	}
 
 	func textStorage(_ textStorage: ParagraphTextStorage, didChangeParagraphs changes: [ParagraphTextStorage.ParagraphChange]) {

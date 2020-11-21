@@ -8,7 +8,7 @@
 
 import Foundation
 
-extension String: AttributedRepresentable {
+extension String {
 	public var attributedPresentation: NSAttributedString {
 		NSAttributedString(string: self)
 	}

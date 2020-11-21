@@ -86,7 +86,7 @@ open class ParagraphTextStorage: NSTextStorage {
 	}
 	
 	private final func sync(with theDelegate: ParagraphTextStorageDelegate?) {
-		guard var paragraphsAvailable = theDelegate?.presentedParagraphs.map({ $0.attributedPresentation }) else { return }
+		guard var paragraphsAvailable = theDelegate?.presentedParagraphs else { return }
 		
 		defer {
 			isSyncingWithDelegate = false
