@@ -30,7 +30,7 @@ Basic code to make it work:
 
 
 If you need to sync your model with ParagraphTextStorage content, set the paragraphDelegate to adopt the ParagraphTextStorageDelegate protocol.
-It's just two methods:
+It's simple:
 	
 	var presentedParagraphs: [AttributedRepresentable] {
 		yourModel.paragraphs
@@ -58,9 +58,7 @@ Finally, set the paragraphDelegate property of the ParagraphTextStorage instance
 That's all you need to implement to make things work.
 
 ### Important changes in version 1.2:
-This version introduces the AttributedRepresentable protocol that defines the attributed string representation of any model. In our case we use this protocol to create even stronger syncronization between a delegate and ParagraphTextStorage.
-
-Updated delegate protocol with new requrements of the model which now should adopt AttributedRepresentable protocol allows ParagraphTextKit to load the initial state of your model into its underlying text storage property.
+Updated delegate protocol with new requrements of the model which now should be able to present its paragraphs as array of NSAttributedStrings. That allows ParagraphTextKit to load the initial state of your model into its underlying text storage property.
 
 In previous versions ParagraphTextKit was able to do its job only if your initial text model was empty. If you've already had some paragraphs in your model then you'd need to set ParagraphTextStorage content by yourself right after the initialization. Now ParagraphTextKit takes that onto itself completely.
 
