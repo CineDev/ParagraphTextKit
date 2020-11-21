@@ -8,9 +8,9 @@
 
 import Foundation
 
-public extension NSAttributedString {
-	var range: NSRange {
-		NSRange(location: 0, length: length)
+extension String: AttributedRepresentable {
+	public var attributedPresentation: NSAttributedString {
+		NSAttributedString(string: self)
 	}
 }
 
@@ -37,6 +37,10 @@ public extension String {
 	
 	var range: NSRange {
 		NSRange(location: 0, length: length)
+	}
+	
+	var endsWithNewline: Bool {
+		!(last == nil || last?.isNewline == false)
 	}
 	
 	func contains(_ set: CharacterSet) -> Bool {

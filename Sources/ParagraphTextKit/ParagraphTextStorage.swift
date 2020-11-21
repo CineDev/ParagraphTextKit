@@ -2,7 +2,7 @@
 //  ParagraphTextStorage.swift
 //  ParagraphTextKit
 //
-//  Created by Vitalii Vashchenko on 16.04.2020.
+//  Created by Vitalii Vashchenko on 04/16/20.
 //  Copyright © 2020 Vitalii Vashchenko. All rights reserved.
 //
 
@@ -30,15 +30,17 @@ open class ParagraphTextStorage: NSTextStorage {
 	}
 	
 	/// Array of the storage paragraphs
-	public fileprivate(set) var paragraphRanges = [NSRange(location: 0, length: 0)]
-
+	public fileprivate(set) var paragraphRanges: [NSRange] = [.zero]
+	
+	/// When a delegate is set ParagraphTextStorage initiates the syncing process with its paragraph model.
+	/// And it's crucial that delegate notifications are disbled during this process.
+	/// This property serves exactly this purpose.
+	fileprivate var isSyncingWithDelegate = false
+	
 	/// Delegate watches for any edits in the storage paragraphs
 	public weak var paragraphDelegate: ParagraphTextStorageDelegate? {
 		didSet {
-			// make sure that the delegate becomes in sync with paragraphs, when initialized
-			if self.length == 0 && paragraphDelegate?.paragraphCount() == 0 {
-				paragraphDelegate?.textStorage(self, didChangeParagraphs: [ParagraphChange.insertedParagraph(index: 0, descriptor: paragraphDescriptor(atParagraphIndex: 0))])
-			}
+			sync(with: paragraphDelegate)
 		}
 	}
 	
@@ -73,7 +75,7 @@ open class ParagraphTextStorage: NSTextStorage {
 	///
 	/// The NSTextStorage.willProcessEditingNotification notification ensures that we call fixParagraphRanges method at the right time,
 	/// when all the private APIs have done their job.
-	private func startProcessingSubscriber() {
+	private final func startProcessingSubscriber() {
 		processingSubscriber = NotificationCenter.default.publisher(for: NSTextStorage.willProcessEditingNotification)
 			.compactMap{ $0.object as? ParagraphTextStorage }
 			.sink { sender in
@@ -81,6 +83,93 @@ open class ParagraphTextStorage: NSTextStorage {
 					self.fixParagraphRanges()
 				}
 		}
+	}
+	
+	private final func sync(with theDelegate: ParagraphTextStorageDelegate?) {
+		guard var paragraphsAvailable = theDelegate?.presentedParagraphs.map({ $0.attributedPresentation }) else { return }
+		
+		defer {
+			isSyncingWithDelegate = false
+		}
+		
+		// make sure that the delegate becomes in sync with paragraphs, when initialized with empty storage
+		if length == 0 && paragraphsAvailable.count == 0 {
+			paragraphDelegate?.textStorage(self, didChangeParagraphs: [ParagraphChange.insertedParagraph(index: 0, descriptor: paragraphDescriptor(atParagraphIndex: 0))])
+			return
+		}
+		
+		isSyncingWithDelegate = true
+				
+		// first, make sure the there's no errors in delegate's paragraphs and all of them end
+		// with newline character (except the last one)
+		var changes: [ParagraphChange] = []
+		paragraphsAvailable = fixParagraphs(paragraphsAvailable, changes: &changes)
+				
+		// make sure we won't reload the content that is still actual
+		if paragraphRanges.count == paragraphsAvailable.count {
+			for (index, range) in paragraphRanges.enumerated() {
+				let substring = attributedSubstring(from: range)
+				let modelString = paragraphsAvailable[index]
+				
+				if substring != modelString {
+					beginEditing()
+					replaceCharacters(in: range, with: modelString)
+					endEditing()
+				}
+			}
+		}
+		
+		// get the whole linear attributed string
+		let completeString = NSMutableAttributedString()
+		paragraphsAvailable.forEach{ completeString.append($0) }
+		
+		// replace the self content with a new one
+		beginEditing()
+		replaceCharacters(in: NSRange(location: 0, length: length), with: completeString)
+		endEditing()
+		
+		if !changes.isEmpty {
+			// notify the delegate that the changes have been made to the initial storage to fix paragraph newlines
+			theDelegate?.textStorage(self, didChangeParagraphs: changes)
+		}
+	}
+	
+	private final func fixParagraphs(_ paragraphs: [NSAttributedString], changes: inout [ParagraphChange]) -> [NSAttributedString] {
+		var currentRange = NSRange.zero
+		var fixedParagraphs = paragraphs
+		
+		for (index, attrString) in paragraphs.enumerated() {
+			currentRange.location = currentRange.max
+			currentRange.length = attrString.length
+			
+			// if non-last paragraphs haven't newline character at the end, append it
+			if !attrString.string.endsWithNewline && index < paragraphs.count - 1 {
+				let fixedAttrString = NSMutableAttributedString(attributedString: attrString)
+				fixedAttrString.beginEditing()
+				fixedAttrString.replaceCharacters(in: _NSRange(location: fixedAttrString.range.max, length: 0), with: "\n")
+				fixedAttrString.endEditing()
+				fixedParagraphs[index] = fixedAttrString
+				
+				let descriptor = ParagraphDescriptor(attributedString: fixedAttrString, storageRange: currentRange)
+				changes.append(ParagraphChange.editedParagraph(index: index, descriptor: descriptor))
+			}
+			
+			// if last paragraph have newline character at the end, remove it
+			if attrString.string.endsWithNewline && index == paragraphs.count - 1 {
+				let fixedAttrString = NSMutableAttributedString(attributedString: attrString)
+				let deleteRange = NSRange(location: fixedAttrString.range.max - 1, length: 1)
+				fixedAttrString.beginEditing()
+				fixedAttrString.deleteCharacters(in: deleteRange)
+				fixedAttrString.endEditing()
+				fixedParagraphs[index] = fixedAttrString
+				
+				let paragraphRange = NSRange(location: currentRange.location, length: currentRange.length - 1)
+				let descriptor = ParagraphDescriptor(attributedString: fixedAttrString, storageRange: paragraphRange)
+				changes.append(ParagraphChange.editedParagraph(index: index, descriptor: descriptor))
+			}
+		}
+		
+		return fixedParagraphs
 	}
 	
 	
@@ -135,7 +224,7 @@ open class ParagraphTextStorage: NSTextStorage {
 	
 	// MARK: - Paragraph Management
 
-	private func fixParagraphRanges() {
+	private final func fixParagraphRanges() {
 		defer {
 			nextEditedParagraphWillHaveRangeEqualWithFirst = false
 			indexesBeforeEditing.removeAll()
@@ -229,7 +318,7 @@ open class ParagraphTextStorage: NSTextStorage {
 		}
 		
 		// notify the delegate of changes being made
-		if let existingDelegate = paragraphDelegate {
+		if let existingDelegate = paragraphDelegate, !isSyncingWithDelegate {
 			let descriptedChanges = ParagraphChange.from(rangeChanges: changes, textStorage: self)
 			existingDelegate.textStorage(self, didChangeParagraphs: descriptedChanges)
 		}
@@ -238,11 +327,11 @@ open class ParagraphTextStorage: NSTextStorage {
 	
 	// MARK: - Paragraph Seeking
 	
-	private func paragraphRanges(from range: NSRange) -> [NSRange] {
+	private final func paragraphRanges(from range: NSRange) -> [NSRange] {
 		paragraphIndexes(in: range).map{ paragraphRanges[$0] }
 	}
 	
-	private func substringParagraphRanges(from range: NSRange) -> [NSRange] {
+	private final func substringParagraphRanges(from range: NSRange) -> [NSRange] {
 		let paragraphs = attributedSubstring(from: range).string.paragraphs
 		let startingParagraphRange = string.utfParagraphRange(at: range.location)
 		
