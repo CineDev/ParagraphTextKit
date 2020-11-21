@@ -21,10 +21,10 @@ class Delegate: ParagraphTextStorageDelegate {
 		}
 	}
 	
-	func paragraphCount() -> Int {
-		paragraphs.count
+	var presentedParagraphs: [AttributedRepresentable] {
+		paragraphs
 	}
-	
+
 	func textStorage(_ textStorage: ParagraphTextStorage, didChangeParagraphs changes: [ParagraphTextStorage.ParagraphChange]) {
 		for change in changes {
 			switch change {
@@ -59,6 +59,195 @@ class Delegate: ParagraphTextStorageDelegate {
 	}
 }
 
+
+// MARK: - Delegate Syncing Tests
+
+final class ParagraphDelegateHasThreeCorrectInitialParagraphTest: XCTestCase {
+	let textStorage = ParagraphTextStorage()
+	let delegate = Delegate()
+
+	override func setUp() {
+		super.setUp()
+		
+		delegate.paragraphs.append("1\n")
+		delegate.paragraphs.append("2\n")
+		delegate.paragraphs.append("3")
+		delegate.attributes.append([:])
+		delegate.attributes.append([:])
+		delegate.attributes.append([:])
+
+		textStorage.paragraphDelegate = delegate
+	}
+
+	override func tearDown() {
+		super.tearDown()
+	}
+	
+	func testParagraphTextStorageDelegate() {
+		XCTAssertTrue(textStorage.paragraphRanges.isEmpty == false,
+					  "ParagraphTextStorage should have one paragraph descriptor at init")
+		XCTAssertTrue(textStorage.paragraphRanges.count == 3,
+					  "ParagraphTextStorageDelegate should have three paragraphs after the syncing")
+		XCTAssertTrue(delegate.paragraphs[0] == "1\n",
+					  "ParagraphTextStorageDelegate first paragraph should contain '1\n' string after the syncing")
+		XCTAssertTrue(delegate.paragraphs[1] == "2\n",
+					  "ParagraphTextStorageDelegate second paragraph should contain '2\n' string after the syncing")
+		XCTAssertTrue(delegate.paragraphs[2] == "3",
+					  "ParagraphTextStorageDelegate third paragraph should contain '3' string after the syncing")
+		XCTAssertTrue(textStorage.attributedSubstring(from: textStorage.paragraphRanges[0]).string == "1\n",
+					  "ParagraphTextStorage first paragraph should contain '1\n' string after the syncing")
+		XCTAssertTrue(textStorage.attributedSubstring(from: textStorage.paragraphRanges[1]).string == "2\n",
+					  "ParagraphTextStorage second paragraph should contain '2\n' string after the syncing")
+		XCTAssertTrue(textStorage.attributedSubstring(from: textStorage.paragraphRanges[2]).string == "3",
+					  "ParagraphTextStorage third paragraph should contain '3' string after the syncing")
+	}
+}
+
+final class ParagraphDelegateHasThreeMixedInitialParagraphTest: XCTestCase {
+	let textStorage = ParagraphTextStorage()
+	let delegate = Delegate()
+
+	override func setUp() {
+		super.setUp()
+		
+		delegate.paragraphs.append("1")
+		delegate.paragraphs.append("2\n")
+		delegate.paragraphs.append("3")
+		delegate.attributes.append([:])
+		delegate.attributes.append([:])
+		delegate.attributes.append([:])
+
+		textStorage.paragraphDelegate = delegate
+	}
+
+	override func tearDown() {
+		super.tearDown()
+	}
+	
+	func testParagraphTextStorageDelegate() {
+		XCTAssertTrue(textStorage.paragraphRanges.isEmpty == false,
+					  "ParagraphTextStorage should have one paragraph descriptor at init")
+		XCTAssertTrue(textStorage.paragraphRanges.count == 3,
+					  "ParagraphTextStorageDelegate should have three paragraphs after the syncing")
+		XCTAssertTrue(delegate.paragraphs[0] == "1\n",
+					  "ParagraphTextStorageDelegate first paragraph should contain '1\n' string after the syncing")
+		XCTAssertTrue(delegate.paragraphs[1] == "2\n",
+					  "ParagraphTextStorageDelegate second paragraph should contain '2\n' string after the syncing")
+		XCTAssertTrue(delegate.paragraphs[2] == "3",
+					  "ParagraphTextStorageDelegate third paragraph should contain '3' string after the syncing")
+		XCTAssertTrue(textStorage.attributedSubstring(from: textStorage.paragraphRanges[0]).string == "1\n",
+					  "ParagraphTextStorage first paragraph should contain '1\n' string after the syncing")
+		XCTAssertTrue(textStorage.attributedSubstring(from: textStorage.paragraphRanges[1]).string == "2\n",
+					  "ParagraphTextStorage second paragraph should contain '2\n' string after the syncing")
+		XCTAssertTrue(textStorage.attributedSubstring(from: textStorage.paragraphRanges[2]).string == "3",
+					  "ParagraphTextStorage third paragraph should contain '3' string after the syncing")
+	}
+}
+
+
+final class ParagraphDelegateHasTwoInitialParagraphTest: XCTestCase {
+	let textStorage = ParagraphTextStorage()
+	let delegate = Delegate()
+
+	override func setUp() {
+		super.setUp()
+		
+		delegate.paragraphs.append("1")
+		delegate.paragraphs.append("2")
+		delegate.attributes.append([:])
+		delegate.attributes.append([:])
+
+		textStorage.paragraphDelegate = delegate
+	}
+
+	override func tearDown() {
+		super.tearDown()
+	}
+	
+	func testParagraphTextStorageDelegate() {
+		XCTAssertTrue(textStorage.paragraphRanges.isEmpty == false,
+					  "ParagraphTextStorage should have one paragraph descriptor at init")
+		XCTAssertTrue(textStorage.paragraphRanges.count == 2,
+					  "ParagraphTextStorage should have two paragraphs after the syncing")
+		XCTAssertTrue(delegate.paragraphs[0] == "1\n",
+					  "ParagraphTextStorageDelegate first paragraph should contain '1\n' string after the syncing")
+		XCTAssertTrue(delegate.paragraphs[1] == "2",
+					  "ParagraphTextStorageDelegate second paragraph should contain '2' string after the syncing")
+		XCTAssertTrue(textStorage.attributedSubstring(from: textStorage.paragraphRanges[0]).string == "1\n",
+					  "ParagraphTextStorage first paragraph should contain '1\n' string after the syncing")
+		XCTAssertTrue(textStorage.attributedSubstring(from: textStorage.paragraphRanges[1]).string == "2",
+					  "ParagraphTextStorage second paragraph should contain '2' string after the syncing")
+	}
+}
+
+final class ParagraphDelegateHasTwoInitialIncorrectParagraphsTest: XCTestCase {
+	let textStorage = ParagraphTextStorage()
+	let delegate = Delegate()
+
+	override func setUp() {
+		super.setUp()
+		
+		delegate.paragraphs.append("1")
+		delegate.paragraphs.append("2\n")
+		delegate.attributes.append([:])
+		delegate.attributes.append([:])
+
+		textStorage.paragraphDelegate = delegate
+	}
+
+	override func tearDown() {
+		super.tearDown()
+	}
+	
+	func testParagraphTextStorageDelegate() {
+		XCTAssertTrue(textStorage.paragraphRanges.isEmpty == false,
+					  "ParagraphTextStorage should have one paragraph descriptor at init")
+		XCTAssertTrue(textStorage.paragraphRanges.count == 2,
+					  "ParagraphTextStorage should have two paragraphs after the syncing")
+		XCTAssertTrue(delegate.paragraphs[0] == "1\n",
+					  "ParagraphTextStorageDelegate first paragraph should contain '1\n' string after the syncing")
+		XCTAssertTrue(delegate.paragraphs[1] == "2",
+					  "ParagraphTextStorageDelegate second paragraph should contain '2' string after the syncing")
+		XCTAssertTrue(textStorage.attributedSubstring(from: textStorage.paragraphRanges[0]).string == "1\n",
+					  "ParagraphTextStorage first paragraph should contain '1\n' string after the syncing")
+		XCTAssertTrue(textStorage.attributedSubstring(from: textStorage.paragraphRanges[1]).string == "2",
+					  "ParagraphTextStorage second paragraph should contain '2' string after the syncing")
+	}
+}
+
+final class ParagraphDelegateHasOneInitialParagraphTest: XCTestCase {
+	let textStorage = ParagraphTextStorage()
+	let delegate = Delegate()
+
+	override func setUp() {
+		super.setUp()
+		
+		delegate.paragraphs.append("1")
+		delegate.attributes.append([:])
+
+		textStorage.paragraphDelegate = delegate
+	}
+
+	override func tearDown() {
+		super.tearDown()
+	}
+	
+	func testParagraphTextStorageDelegate() {
+		XCTAssertTrue(textStorage.paragraphRanges.isEmpty == false,
+					  "ParagraphTextStorage should have one paragraph descriptor at init")
+		XCTAssertTrue(textStorage.paragraphRanges.count == 1,
+					  "ParagraphTextStorage should have one paragraph after the syncing")
+		XCTAssertTrue(delegate.paragraphs[0] == "1",
+					  "ParagraphTextStorageDelegate first paragraph should contain '1' string after the syncing")
+		XCTAssertTrue(textStorage.attributedSubstring(from: textStorage.paragraphRanges[0]).string == "1",
+					  "ParagraphTextStorage first paragraph should contain '1' string after the syncing")
+	}
+}
+
+
+
+// MARK: - ParagraphTextStorage Algorhythm Tests
+
 final class ParagraphTextStorageTests: XCTestCase {
 	let textStorage = ParagraphTextStorage()
 	let delegate = Delegate()
@@ -70,7 +259,6 @@ final class ParagraphTextStorageTests: XCTestCase {
     }
     
     override func tearDown() {
-        // Put teardown code here. This method is called after the invocation of each test method in the class.
         super.tearDown()
     }
     
@@ -110,14 +298,14 @@ final class ParagraphTextStorageTests: XCTestCase {
 		
 		#if !os(macOS)
 		textStorage.beginEditing()
-		textStorage.setAttributes([.foregroundColor: UIColor.textColor], range: secondRange)
+		textStorage.setAttributes([.foregroundColor: UIColor.lightText], range: secondRange)
 		textStorage.endEditing()
 
 		XCTAssertTrue(delegate.insertions.count == 1 && delegate.editions.count == 2 && delegate.removals.count == 0,
 					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
 
 		XCTAssertTrue(delegate.attributes[0].isEmpty &&
-					  delegate.attributes[1][.foregroundColor] as? UIColor == UIColor.textColor,
+					  delegate.attributes[1][.foregroundColor] as? UIColor == UIColor.lightText,
 					  "ParagraphTextStorage delegate attributes should match the ParagraphTextStorage")
 		
 		XCTAssertTrue(textStorage.paragraphRanges[0] == firstRange &&
