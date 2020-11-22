@@ -32,7 +32,7 @@ Basic code to make it work:
 If you need to sync your model with ParagraphTextStorage content, set the paragraphDelegate to adopt the ParagraphTextStorageDelegate protocol.
 It's simple:
 	
-	var presentedParagraphs: [AttributedRepresentable] {
+	var presentedParagraphs: [NSAttributedString] {
 		yourModel.paragraphs
 	}
 	
