@@ -117,16 +117,16 @@ open class ParagraphTextStorage: NSTextStorage {
 					endEditing()
 				}
 			}
+		} else {
+			// get the whole linear attributed string
+			let completeString = NSMutableAttributedString()
+			paragraphsAvailable.forEach{ completeString.append($0) }
+			
+			// replace the self content with a new one
+			beginEditing()
+			replaceCharacters(in: NSRange(location: 0, length: length), with: completeString)
+			endEditing()
 		}
-		
-		// get the whole linear attributed string
-		let completeString = NSMutableAttributedString()
-		paragraphsAvailable.forEach{ completeString.append($0) }
-		
-		// replace the self content with a new one
-		beginEditing()
-		replaceCharacters(in: NSRange(location: 0, length: length), with: completeString)
-		endEditing()
 		
 		if !changes.isEmpty {
 			// notify the delegate that the changes have been made to the initial storage to fix paragraph newlines
