@@ -267,7 +267,7 @@ open class ParagraphTextStorage: NSTextStorage {
 				changes.append(ParagraphRangeChange.editedParagraph(index: $0, range: paragraphRanges[$0]))
 			}
 			
-			if let existingDelegate = paragraphDelegate {
+			if let existingDelegate = paragraphDelegate, !isSyncingWithDelegate {
 				let descriptedChanges = ParagraphChange.from(rangeChanges: changes, textStorage: self)
 				existingDelegate.textStorage(self, didChangeParagraphs: descriptedChanges)
 			}
