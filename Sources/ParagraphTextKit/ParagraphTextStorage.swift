@@ -2,9 +2,14 @@
 //  ParagraphTextStorage.swift
 //  ParagraphTextKit
 //
-//  Created by Vitalii Vashchenko on 04/16/20.
-//  Copyright © 2020 Vitalii Vashchenko. All rights reserved.
+// 	Copyright (c) 2020 Vitalii Vashchenko
 //
+//	This software is released under the MIT License.
+// 	https://opensource.org/licenses/MIT
+//
+// 	Created by Vitalii Vashchenko on 04/16/20.
+//
+
 
 #if os(macOS)
 import Cocoa
@@ -23,7 +28,7 @@ open class ParagraphTextStorage: NSTextStorage {
 	public override var length: Int {
 		storage.length
 	}
-
+	
 	/// Text storage string representation with read-only access
 	public override var string : String {
 		storage.mutableString as String
@@ -59,7 +64,7 @@ open class ParagraphTextStorage: NSTextStorage {
 	/// It is important, because if the edit with the same length of the selected text , the diff algrothythm
 	/// won't recognize it as a change, since the result text storage will have the same paragraph lengths
 	private var editHasSameLength = false
-
+	
 	/// Subscriber to the NSTextStorage.willProcessEditingNotification
 	private var processingSubscriber: AnyCancellable?
 	
@@ -82,7 +87,7 @@ open class ParagraphTextStorage: NSTextStorage {
 				if sender == self {
 					self.fixParagraphRanges()
 				}
-		}
+			}
 	}
 	
 	private final func sync(with theDelegate: ParagraphTextStorageDelegate?) {
@@ -99,12 +104,12 @@ open class ParagraphTextStorage: NSTextStorage {
 		}
 		
 		isSyncingWithDelegate = true
-				
+		
 		// first, make sure the there's no errors in delegate's paragraphs and all of them end
 		// with newline character (except the last one)
 		var changes: [ParagraphChange] = []
 		paragraphsAvailable = fixParagraphs(paragraphsAvailable, changes: &changes)
-				
+		
 		// make sure we won't reload the content that is still actual
 		if paragraphRanges.count == paragraphsAvailable.count {
 			for (index, range) in paragraphRanges.enumerated() {
@@ -196,7 +201,7 @@ open class ParagraphTextStorage: NSTextStorage {
 		
 		if indexesBeforeEditing.count > 1 && delta < 0 {
 			let firstRange = paragraphRanges[indexesBeforeEditing[0]]
-
+			
 			if firstRange.location == range.location && range.max > firstRange.max {
 				let affectedRanges = indexesBeforeEditing.map{ paragraphRanges[$0] }
 				let checkRanges =  Array(affectedRanges.dropLast())
@@ -223,7 +228,7 @@ open class ParagraphTextStorage: NSTextStorage {
 	
 	
 	// MARK: - Paragraph Management
-
+	
 	private final func fixParagraphRanges() {
 		defer {
 			nextEditedParagraphWillHaveRangeEqualWithFirst = false
@@ -340,7 +345,7 @@ open class ParagraphTextStorage: NSTextStorage {
 		// for inserted (not appended) paragraphs we need this hack
 		if paragraphs.count > 1 && range.max < length {
 			var nextLocation = startingParagraphRange.max
-
+			
 			for _ in 1 ..< paragraphs.count {
 				let paragraph = string.utfParagraphRange(at: nextLocation)
 				ranges.append(paragraph)
@@ -351,7 +356,7 @@ open class ParagraphTextStorage: NSTextStorage {
 				ranges.append( NSRange(location: ranges.last!.max, length: paragraph.length) )
 			}
 		}
-
+		
 		return ranges
 	}
 	
@@ -359,7 +364,7 @@ open class ParagraphTextStorage: NSTextStorage {
 	public func paragraphIndex(at location: Int) -> Int {
 		guard self.length > 0 else { return 0 }
 		guard location < self.length else { return paragraphRanges.count - 1 }
-
+		
 		return paragraphRanges.firstIndex(where: { $0.contains(location) })!
 	}
 	
@@ -372,23 +377,23 @@ open class ParagraphTextStorage: NSTextStorage {
 		if paragraphs.last?.isEmpty == true && editHasSameLength {
 			paragraphs = paragraphs.dropLast()
 		}
-
+		
 		// get start/end indexes for substring the existing paragraphs array..
 		// .. it's better than iterating through all the paragraphs, especially if text is huge
 		let firstTouchedIndex = paragraphIndex(at: range.location)
 		let lastTouchedIndex = paragraphIndex(at: range.max)
-
+		
 		var paragraphIndexes = [Int]()
 		
 		// catch the paragraph indexes that are match with given range
 		for i in firstTouchedIndex...lastTouchedIndex {
-
+			
 			// for recognizing deleted paragraphs, we need this hack
 			if paragraphs.count > 1 && i > 0 && paragraphRanges.count - 1 >= i {
 				paragraphIndexes.append(i)
 				continue
 			}
-
+			
 			let paragraph = paragraphRanges[i]
 			
 			if let _ = paragraph.intersection(range) {
@@ -411,12 +416,12 @@ open class ParagraphTextStorage: NSTextStorage {
 		let string = attributedSubstring(from: range)
 		return ParagraphDescriptor(attributedString: string, storageRange: range)
 	}
-
+	
 	public func paragraphDescriptor(atCharacterIndex characterIndex: Int) -> ParagraphDescriptor {
 		let index = paragraphIndex(at: characterIndex)
 		return paragraphDescriptor(atParagraphIndex: index)
 	}
-
+	
 	public func paragraphDescriptors(in range: NSRange) -> [ParagraphDescriptor] {
 		let indexes = paragraphIndexes(in: range)
 		return indexes.map{ paragraphDescriptor(atParagraphIndex: $0) }

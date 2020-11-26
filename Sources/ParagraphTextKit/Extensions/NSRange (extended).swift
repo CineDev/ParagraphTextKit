@@ -2,8 +2,12 @@
 //  NSRange (extended).swift
 //  ParagraphTextKit
 //
-//  Created by Vitalii Vashchenko on 07.05.2020.
-//  Copyright © 2020 Vitalii Vashchenko. All rights reserved.
+// 	Copyright (c) 2020 Vitalii Vashchenko
+//
+//	This software is released under the MIT License.
+// 	https://opensource.org/licenses/MIT
+//
+//  Created by Vitalii Vashchenko on 5/7/2020.
 //
 
 import Foundation

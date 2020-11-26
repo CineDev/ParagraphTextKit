@@ -2,8 +2,12 @@
 //  ParagraphTextStorageDelegate.swift
 //  ParagraphTextKit
 //
+// 	Copyright (c) 2020 Vitalii Vashchenko
+//
+//	This software is released under the MIT License.
+// 	https://opensource.org/licenses/MIT
+//
 //  Created by Vitalii Vashchenko on 2/11/19.
-//  Copyright © 2020 Vitalii Vashchenko. All rights reserved.
 //
 
 import Foundation

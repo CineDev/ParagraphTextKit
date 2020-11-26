@@ -6,6 +6,8 @@ This behavior is important when the paragraph entity represents a specific objec
 
 As a result, you now get an opportunity to track changes paragraph-by-paragraph and reflect those changes in your model. That will make it easy not only to build a custom business logic with your model, but also to convert that model into a persistant state using Core Data, for example.
 
+This project is licensed under the terms of the MIT license.
+
 ### Requirements
 
 - iOS 13.0+ / macOS 10.15+
