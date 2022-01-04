@@ -1296,6 +1296,30 @@ final class ParagraphTextStorageTests: XCTestCase {
 					   "ParagraphTextStorage paragraph ranges should match the delegate ranges")
 	}
 	
+	func testParagraphTextStorage_DeleteAllParagraphs() {
+		let string = "First paragraph\nSecond paragraph\nThird paragraph"
+		
+		textStorage.beginEditing()
+		textStorage.replaceCharacters(in: NSRange(location: 0, length: 0), with: string)
+		textStorage.endEditing()
+		
+		textStorage.beginEditing()
+		textStorage.replaceCharacters(in: NSRange(location: 0, length: string.length), with: "")
+		textStorage.endEditing()
+		
+		XCTAssertTrue(delegate.insertions.count == 2 && delegate.editions.count == 2 && delegate.removals.count == 2,
+					  "ParagraphTextStorage paragraph delegate should be notified of exact changes")
+
+		XCTAssertTrue(delegate.insertions[0] == 1 && delegate.insertions[1] == 2)
+		XCTAssertTrue(delegate.editions[0] == 0 && delegate.editions[1] == 0)
+		XCTAssertTrue(delegate.removals[0] == 2)
+		XCTAssertTrue(delegate.removals[1] == 1)
+		
+		XCTAssertTrue(textStorage.paragraphRanges.count == 1,
+					  "ParagraphTextStorage should now have 1 paragraphs")
+		XCTAssertTrue(delegate.paragraphs[0].isEmpty)
+	}
+
 	
 	// MARK: - Mixed Tests
 	
