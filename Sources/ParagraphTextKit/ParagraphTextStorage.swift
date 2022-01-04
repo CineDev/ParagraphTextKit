@@ -18,7 +18,7 @@ import UIKit
 #endif
 import Combine
 
-//	ModernTextStorage is a subclass of NSTextStorage class.
+//	ParagraphTextStorage is a subclass of NSTextStorage class.
 //	It works with whole text paragraphs and notifies its
 //	paragraph delegate of any changes in any paragraph.
 //	Delegate receives the touched paragraph descriptors and their indexes.
@@ -34,7 +34,7 @@ open class ParagraphTextStorage: NSTextStorage {
 		storage.mutableString as String
 	}
 	
-	/// Array of the storage paragraphs
+	/// The array of the text storage paragraphs
 	public fileprivate(set) var paragraphRanges: [NSRange] = [.zero]
 	
 	/// When a delegate is set ParagraphTextStorage initiates the syncing process with its paragraph model.
