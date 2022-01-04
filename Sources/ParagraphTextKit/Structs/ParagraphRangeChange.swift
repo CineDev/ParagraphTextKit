@@ -51,10 +51,14 @@ internal extension ParagraphTextStorage {
 							// then this is actually an exception from the rule that 'edited index will always be the first one'
 							// and in this case the LAST index should be notified as 'edited index'
 							if insertionLocation == baseParagraphRange.location && removedRange == baseParagraphRange && baseParagraphRange.max > 0 {
-								if insertionRange.location == baseParagraphRange.location && difference.insertions.count > 1	||
-									removedRange.location == baseParagraphRange.location && difference.removals.count > 1	{
-									lastIndexEdited = true
-									break
+								if insertionRange.location == baseParagraphRange.location && difference.insertions.count > 1 ||
+									removedRange.location == baseParagraphRange.location && difference.removals.count > 1 {
+									// except the case when the whole text storage content has been deleted...
+									// ... like when the user selects all the text and hits 'Delete'
+									if removedRange.max > 0 && insertionRange.max == 0 { } else {
+										lastIndexEdited = true
+										break
+									}
 								}
 							}
 							
@@ -94,9 +98,10 @@ internal extension ParagraphTextStorage {
 					if lastIndexEdited && difference.removals.first == change && difference.insertions.count > difference.removals.count ||
 						lastIndexEdited && difference.removals.last == change && difference.removals.count > difference.insertions.count {
 						if difference.removals.count > difference.insertions.count,
-							let firstInsertion = difference.insertions.first, let lastTouched = difference.removals.last,
-							case CollectionDifference<NSRange>.Change.insert(offset: _, element: let range, associatedWith: _) = firstInsertion,
-							case CollectionDifference<NSRange>.Change.remove(offset: _, element: let touchedRange, associatedWith: _) = lastTouched {
+						   let firstInsertion = difference.insertions.first,
+						   let lastTouched = difference.removals.last,
+						   case CollectionDifference<NSRange>.Change.insert(offset: _, element: let range, associatedWith: _) = firstInsertion,
+						   case CollectionDifference<NSRange>.Change.remove(offset: _, element: let touchedRange, associatedWith: _) = lastTouched {
 							if touchedRange.length != range.length {
 								changes.append(.editedParagraph(index: paragraphIndex, range: range))
 							}
